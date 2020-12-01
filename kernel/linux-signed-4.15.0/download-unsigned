@@ -1,0 +1,17 @@
+#!/bin/bash
+
+arch="$1"
+version="$2"
+
+unsigned=$(awk '
+	/^Package: linux-image-/			{ package=$2; next }
+	/^Package:/					{ package=""; next }
+	/^Architecture:.* '"$arch"'( |$)/		{ print package }
+	' <debian/control)
+for package in $unsigned
+do
+	package=$(echo "$package" | sed -e 's/linux-image-/linux-image-unsigned-/')
+	echo "Downloading $package ..."
+	apt-get download "$package=$version"
+	dpkg -X "${package}_${version}_${arch}.deb" UNSIGNED
+done
